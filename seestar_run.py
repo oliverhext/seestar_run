@@ -277,7 +277,7 @@ def main():
                 time.sleep(3)
                 autofocus()
                 print("Autofocusing")
-                time.sleep(30)
+                time.sleep(60)
                 print("Autofocus complete")
                 if op_state == "complete":
                     start_stack()    
