@@ -23,6 +23,7 @@ This document details `seestar_run`, a companion application for the Seestar mob
 
 * Seestar with completed calibration steps (horizontal, dark frame, leveling)
 * computer/laptop with Python installed (e.g. [https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/))
+* Seestar is setup in station mode.  
 
 **Usage:**
 
