@@ -13,7 +13,7 @@ This document details `seestar_run`, a companion application for the Seestar mob
 * Custom target capture
 * Spectral image capture over extended frames
 
-**Amendment from original code
+**Amendment from original code**
 
 * added an autofocus function
 * added a shutdown function
@@ -45,7 +45,7 @@ python seestar_run.py <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <
 * **RA and Dec panel size:** Number of panels in a mosaic.
 * **RA and Dec offset factors:** Distance between mosaic panels, lower values will have more overlaps
 * **Debug:** Either 1 or 0 
-* **Shutdown: ** Either 1 or 0
+* **Shutdown:** Either 1 or 0
 
 
 
