@@ -5,14 +5,13 @@ from datetime import datetime
 import threading
 import sys
 
-def heartbeat(): #I noticed a lot of pairs of test_connection followed by a get if nothing was going on
+def heartbeat():
     json_message("test_connection")
-#    json_message("scope_get_equ_coord")
 
 def send_message(data):
     global s
     try:
-        s.sendall(data.encode())  # TODO: would utf-8 or unicode_escaped help here
+        s.sendall(data.encode())
     except socket.error as e:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((HOST, PORT))
@@ -21,7 +20,7 @@ def send_message(data):
 def get_socket_msg():
     global s
     try:
-        data = s.recv(1024 * 60)  # comet data is >50kb
+        data = s.recv(1024 * 60)
     except socket.error as e:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((HOST, PORT))
@@ -38,7 +37,6 @@ def receieve_message_thread_fn():
         
     msg_remainder = ""
     while is_watch_events:
-        #print("checking for msg")
         data = get_socket_msg()
         if data:
             msg_remainder += data
@@ -77,6 +75,23 @@ def json_message2(data):
             print("Sending2 %s" % json_data)
         resp = send_message(json_data + "\r\n")
 
+def autofocus():
+    global cmdid
+    print("Auto focus in progress")
+    data = {}
+    data['id'] = cmdid
+    cmdid += 1
+    data['method'] = 'start_auto_focuse'
+    json_message2(data)
+
+def shutdown():
+    global cmdid
+    print("Shutting down")
+    data = {}
+    data['id'] = cmdid
+    cmdid += 1
+    data['method'] = 'pi_shutdown'
+    json_message2(data)
 
 def goto_target(ra, dec, target_name, is_lp_filter):
     global cmdid
@@ -129,26 +144,20 @@ def wait_end_op():
             json_message("test_connection")
         time.sleep(1)
 
-    
 def sleep_with_heartbeat():
     stacking_timer = 0
-    while stacking_timer < session_time:         # stacking time per segment
+    while stacking_timer < session_time:
         stacking_timer += 1
         if stacking_timer % 5 == 0:
             json_message("test_connection")
         time.sleep(1)
 
 def parse_ra_to_float(ra_string):
-    # Split the RA string into hours, minutes, and seconds
     hours, minutes, seconds = map(float, ra_string.split(':'))
-
-    # Convert to decimal degrees
     ra_decimal = hours + minutes / 60 + seconds / 3600
-
     return ra_decimal
     
 def parse_dec_to_float(dec_string):
-    # Split the Dec string into degrees, minutes, and seconds
     if dec_string[0] == '-':
         sign = -1
         dec_string = dec_string[1:]
@@ -156,12 +165,9 @@ def parse_dec_to_float(dec_string):
         sign = 1
     print(dec_string)
     degrees, minutes, seconds = map(float, dec_string.split(':'))
-
-    # Convert to decimal degrees
-    dec_decimal = sign * (degrees + minutes / 60 + seconds / 3600)
-
+    dec_decimal = sign * degrees + minutes / 60 + seconds / 3600
     return dec_decimal
-    
+
 is_watch_events = True
     
 def main():
@@ -176,11 +182,11 @@ def main():
     version_string = "1.0.0b1"
     print("seestar_run version: ", version_string)
     
-    if len(sys.argv) != 11 and len(sys.argv) != 12:
-        print("expected seestar_run <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <session_time> <RA panel size> <Dec panel size> <RA offset factor> <Dec offset factor>")
+    if len(sys.argv) != 13:
+        print("expected seestar_run <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <session_time> <RA panel size> <Dec panel size> <RA offset factor> <Dec offset factor> [<debug_flag>] [<shutdown_flag>]")
         sys.exit()
     
-    HOST= sys.argv[1]
+    HOST = sys.argv[1]
     target_name = sys.argv[2]
     try:
         center_RA = float(sys.argv[3])
@@ -198,14 +204,12 @@ def main():
     nDec = int(sys.argv[8])
     mRA = float(sys.argv[9])
     mDec = float(sys.argv[10])
-    is_debug = False
+    is_debug = sys.argv[11] == '1'
+    shutdown_flag = sys.argv[12] =='1'
 
-    if len(sys.argv) == 12:
-        is_debug = sys.argv[11]=="Kai"
-        
-    print(HOST, target_name, center_RA, center_Dec, is_use_LP_filter, session_time, nRA, nDec, mRA, mDec)
+ 
+    print(HOST, target_name, center_RA, center_Dec, is_use_LP_filter, session_time, nRA, nDec, mRA, mDec,is_debug, shutdown_flag)
     
-    # verify mosaic pattern
     if nRA < 1 or nDec < 0:
         print("Mosaic size is invalid")
         sys.exit()
@@ -222,9 +226,6 @@ def main():
     s.connect((HOST, PORT))
     with s:
         
-        # flush the socket input stream for garbage
-        #get_socket_msg()
-        
         if center_RA < 0:
             json_message("scope_get_equ_coord")
             data = get_socket_msg()
@@ -235,7 +236,6 @@ def main():
                 center_Dec = float(data_result['dec'])
                 print(center_RA, center_Dec)
             
-        # print input requests
         print("received parameters:")
         print("  ip address    : " + HOST)
         print("  target        : " + target_name)
@@ -247,11 +247,11 @@ def main():
         print("  Dec num panels: ", nDec)
         print("  RA offset x   : ", mRA)
         print("  Dec offset x  : ", mDec)
-        
+        print("  Debug         : ",is_debug)
+        print("  Shutdown      : ",shutdown_flag)
         delta_RA *= mRA
         delta_Dec *= mDec
         
-        # adjust mosaic center if num panels is even
         if nRA % 2 == 0:
             center_RA += delta_RA/2
         if nDec % 2 == 0:
@@ -261,49 +261,45 @@ def main():
         get_msg_thread.start()
         
         mosaic_index = 0
-        cur_ra = center_RA-int(nRA/2)*delta_RA
+        cur_ra = center_RA - int(nRA / 2) * delta_RA
         for index_ra in range(nRA):
-            cur_dec = center_Dec-int(nDec/2)*delta_Dec
+            cur_dec = center_Dec - int(nDec / 2) * delta_Dec
             for index_dec in range(nDec):
                 if nRA == 1 and nDec == 1:
                     save_target_name = target_name
                 else:
-                    save_target_name = target_name+"_"+str(index_ra+1)+str(index_dec+1)
+                    save_target_name = target_name + "_" + str(index_ra + 1) + str(index_dec + 1)
                 print("goto ", (cur_ra, cur_dec))
                 goto_target(cur_ra, cur_dec, save_target_name, is_use_LP_filter)
                 wait_end_op()
                 print("Goto operation finished")
                 
                 time.sleep(3)
-                
+                autofocus()
+                print("Autofocusing")
+                time.sleep(30)
+                print("Autofocus complete")
                 if op_state == "complete":
                     start_stack()    
                     sleep_with_heartbeat()
                     stop_stack()
-                    print("Stacking operation finished" + save_target_name)
+                    print("Stacking operation finished: " + save_target_name)
                 else:
                     print("Goto failed.")
-                    
+                   
+                
                 cur_dec += delta_Dec
                 mosaic_index += 1
             cur_ra += delta_RA
         
-        
     print("Finished seestar_run")
     is_watch_events = False
     get_msg_thread.join(timeout=5)
+    
+    if shutdown_flag:
+        shutdown()
+        
     sys.exit()
-    
-    
-    
 
-# seestar_run <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <session_time> <RA panel size> <Dec panel size> <RA offset factor> <Dec offset factor>
-# python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '-41:24:23.5' 0 60 2 2 1.0 1.0
-# python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '+41:24:23.5' 0 60 2 2 1.0 1.0
-# python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '41:24:23.5' 0 60 2 2 1.0 1.0
-# python seestar_run.py 192.168.110.30 'Castor' 7.4090278 41.4065278 0 60 2 2 1.0 1.0
 if __name__ == "__main__":
     main()
-    
-
- 

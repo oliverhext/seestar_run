@@ -1,8 +1,8 @@
 ## seestar_run.md
 
-**Version:** 1.0.0b1
+**Version:** 1.0.0b2
 
-**Tested Firmware:** 2.25
+**Tested Firmware:** 2.71
 
 **Overview:**
 
@@ -12,6 +12,12 @@ This document details `seestar_run`, a companion application for the Seestar mob
 * Night session planning
 * Custom target capture
 * Spectral image capture over extended frames
+
+**Amendment from original code
+
+* added an autofocus function
+* added a shutdown function
+* changed debug flag to true/false
 
 **Requirements:**
 
@@ -25,7 +31,7 @@ This document details `seestar_run`, a companion application for the Seestar mob
 3. **Run Commands:** Use PowerShell for Windows or python in other OS and run the following command:
 
 ```
-python seestar_run.py <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <session_time> <RA panel size> <Dec panel size> <RA offset factor> <Dec offset factor>
+python seestar_run.py <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <session_time> <RA panel size> <Dec panel size> <RA offset factor> <Dec offset factor> <debug> <shutdown>
 ```
 
 **Parameters:**
@@ -38,35 +44,15 @@ python seestar_run.py <ip_address> <target_name> <ra> <dec> <is_use_LP_filter> <
 * **session_time:** Capture session duration per panel in seconds (not integration time).
 * **RA and Dec panel size:** Number of panels in a mosaic.
 * **RA and Dec offset factors:** Distance between mosaic panels, lower values will have more overlaps
+* **Debug:** Either 1 or 0 
+* **Shutdown: ** Either 1 or 0
 
-**Examples:**
 
-* **Custom target capture:**
 
-```
-python seestar_run.py 192.168.110.30 'Castor_Kai' 7.602 31.83 0 60 1 1 1 1
-python seestar_run.py 192.168.110.30 'Castor_Kai' -1 -1 0 60 1 1 1 1
-python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '-41:24:23.5' 0 60 2 2 1.0 1.0
-python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '+41:24:23.5' 0 60 2 2 1.0 1.0
-python seestar_run.py 192.168.110.30 'Castor' '7:24:32.5' '41:24:23.5' 0 60 2 2 1.0 1.0
-```
 
-* **Mosaic capture:**
+**Usage:**
 
-```
-python seestar_run.py 192.168.110.30 'Castor_Kai' 7.602 31.83 0 60 2 3 1.2 1.1
-```
-
-* **Multiple target capture:** Create a batch file with multiple command lines using the above format.
-* **Night session planning:** Use sleep commands in a batch file to schedule captures.
-* **External target setting:**
-
-    1. Set the target using Seestar App, Stellarium, or other tools.
-    2. Use a negative value for `<ra>` in the `seestar_run` command:
-
-```
-python seestar_run.py 192.168.110.30 'Castor' -1.0 -1.0 0 60 1 1 1 1
-```
+* Amend the schedule.bat file as required with your targets
 
 **Feedback:**
 
