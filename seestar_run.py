@@ -153,11 +153,16 @@ def sleep_with_heartbeat():
         time.sleep(1)
 
 def parse_ra_to_float(ra_string):
+    # Split the RA string into hours, minutes, and seconds
     hours, minutes, seconds = map(float, ra_string.split(':'))
+
+    # Convert to decimal degrees
     ra_decimal = hours + minutes / 60 + seconds / 3600
+
     return ra_decimal
     
 def parse_dec_to_float(dec_string):
+    # Split the Dec string into degrees, minutes, and seconds
     if dec_string[0] == '-':
         sign = -1
         dec_string = dec_string[1:]
@@ -165,7 +170,10 @@ def parse_dec_to_float(dec_string):
         sign = 1
     print(dec_string)
     degrees, minutes, seconds = map(float, dec_string.split(':'))
-    dec_decimal = sign * degrees + minutes / 60 + seconds / 3600
+
+    # Convert to decimal degrees
+    dec_decimal = sign * (degrees + minutes / 60 + seconds / 3600)
+
     return dec_decimal
 
 is_watch_events = True
